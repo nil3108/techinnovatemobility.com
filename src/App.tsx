@@ -158,6 +158,27 @@ export default function App() {
   const [cameraError, setCameraError] = useState<string>('');
   const [isCapturing, setIsCapturing] = useState(false);
 
+  // Stop all camera streams when navigating between steps
+  const stopAllCameras = () => {
+    if (pumpStream) {
+      pumpStream.getTracks().forEach(t => t.stop());
+      setPumpStream(null);
+    }
+    if (odoStream) {
+      odoStream.getTracks().forEach(t => t.stop());
+      setOdoStream(null);
+    }
+    if (videoStream) {
+      videoStream.getTracks().forEach(t => t.stop());
+      setVideoStream(null);
+    }
+    recorderInstance.stopStream();
+    if (pumpPreviewRef.current) pumpPreviewRef.current.srcObject = null;
+    if (odoPreviewRef.current) odoPreviewRef.current.srcObject = null;
+    if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null;
+    setCameraError('');
+  };
+
   // Messages & Alerts
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -1365,6 +1386,7 @@ export default function App() {
                     <button
                       onClick={() => {
                         if (confirm("Are you sure you want to cancel the refueling entry? Progress will be lost.")) {
+                          stopAllCameras();
                           setIsWizardOpen(false);
                           setWizardStep(1);
                         }
@@ -2242,21 +2264,6 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="pt-1">
-                          {!odoCaptured ? (
-                            <button
-                              type="button"
-                              onClick={() => setOdoCaptured(true)}
-                              className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs rounded-lg px-5 py-3 transition-all shadow-md inline-flex items-center gap-1.5"
-                            >
-                              <Camera className="h-4 w-4" />
-                              {t.captureOdoPhotoBtn}
-                            </button>
-                          ) : (
-                            <span className="text-xs text-emerald-400 font-bold block">{t.geotagCaptured}</span>
-                          )}
-                        </div>
-
                       </div>
                     )}
 
@@ -2395,7 +2402,7 @@ export default function App() {
                     {wizardStep > 1 ? (
                       <button
                         type="button"
-                        onClick={() => setWizardStep(wizardStep - 1)}
+                        onClick={() => { stopAllCameras(); setWizardStep(wizardStep - 1); }}
                         className="bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-850 hover:text-white px-4.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
                       >
                         <ChevronLeft className="h-4 w-4" />
@@ -2431,6 +2438,7 @@ export default function App() {
                             alert('Please capture the odometer photo first!');
                             return;
                           }
+                          stopAllCameras();
                           setWizardStep(wizardStep + 1);
                         }}
                         className="bg-emerald-600 text-slate-950 hover:bg-emerald-500 px-6 py-3 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-md"
