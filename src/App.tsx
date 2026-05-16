@@ -37,7 +37,7 @@ import { isGoogleSheetsConfigured, getConfigStatus, saveGoogleSheetsUrl, getGoog
 import GoogleSheetsSetup from './components/GoogleSheetsSetup';
 import DriveConnectionTest from './components/DriveConnectionTest';
 import OwnerRegistration from './components/OwnerRegistration';
-import { capturePhoto, VideoRecorder, getCurrentLocation } from './utils/camera';
+import { capturePhoto, captureFrame, VideoRecorder, getCurrentLocation } from './utils/camera';
 
 export default function App() {
   // Language & Portal States
@@ -1659,9 +1659,16 @@ export default function App() {
                               <button
                                 type="button"
                                 onClick={async () => {
-                                  const result = await capturePhoto();
-                                  if (result.success && result.dataUrl) {
-                                    setPumpPhotoData(result.dataUrl);
+                                  let dataUrl = '';
+                                  if (pumpPreviewRef.current) {
+                                    dataUrl = captureFrame(pumpPreviewRef.current) || '';
+                                  }
+                                  if (!dataUrl) {
+                                    const fallback = await capturePhoto();
+                                    dataUrl = fallback.dataUrl || '';
+                                  }
+                                  if (dataUrl) {
+                                    setPumpPhotoData(dataUrl);
                                     setPumpCaptured(true);
                                     // Stop stream
                                     if (pumpStream) {
@@ -1675,7 +1682,7 @@ export default function App() {
                                     const loc = await getCurrentLocation();
                                     setReceiptLocation({ lat: loc.lat, lng: loc.lng });
                                   } else {
-                                    setCameraError(result.error || 'Failed to capture photo');
+                                    setCameraError('Failed to capture photo');
                                   }
                                 }}
                                 className="w-16 h-16 bg-white rounded-full border-4 border-emerald-500 flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
@@ -2077,9 +2084,16 @@ export default function App() {
                                 <button
                                   type="button"
                                   onClick={async () => {
-                                    const result = await capturePhoto();
-                                    if (result.success && result.dataUrl) {
-                                      setOdoPhotoData(result.dataUrl);
+                                    let dataUrl = '';
+                                    if (odoPreviewRef.current) {
+                                      dataUrl = captureFrame(odoPreviewRef.current) || '';
+                                    }
+                                    if (!dataUrl) {
+                                      const fallback = await capturePhoto();
+                                      dataUrl = fallback.dataUrl || '';
+                                    }
+                                    if (dataUrl) {
+                                      setOdoPhotoData(dataUrl);
                                       setOdoCaptured(true);
                                       // Stop stream
                                       if (odoStream) {
@@ -2102,7 +2116,7 @@ export default function App() {
                                       const loc = await getCurrentLocation();
                                       setOdoLocation({ lat: loc.lat, lng: loc.lng });
                                     } else {
-                                      setCameraError(result.error || 'Failed to capture photo');
+                                      setCameraError('Failed to capture photo');
                                     }
                                   }}
                                   className="w-16 h-16 bg-white rounded-full border-4 border-emerald-500 flex items-center justify-center shadow-lg hover:scale-105 transition-transform"

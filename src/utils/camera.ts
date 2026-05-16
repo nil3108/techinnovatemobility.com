@@ -30,11 +30,26 @@ export async function checkCameraCapabilities(): Promise<CameraCapabilities> {
   }
 }
 
-// Capture a photo from camera
+// Capture a frame from an existing video element (no extra getUserMedia call)
+export function captureFrame(video: HTMLVideoElement): string | null {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(video, 0, 0);
+    return canvas.toDataURL('image/jpeg', 0.85);
+  } catch {
+    return null;
+  }
+}
+
+// Capture a photo from camera (opens a new temporary stream)
 export async function capturePhoto(): Promise<{ success: boolean; dataUrl?: string; error?: string }> {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
     });
     
     const video = document.createElement('video');
@@ -42,20 +57,20 @@ export async function capturePhoto(): Promise<{ success: boolean; dataUrl?: stri
     video.setAttribute('playsinline', 'true');
     await video.play();
     
-    // Wait a bit for camera to adjust
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Small wait for camera to adjust
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     // Capture frame
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
     const ctx = canvas.getContext('2d')!;
     ctx.drawImage(video, 0, 0);
     
     // Stop camera
     stream.getTracks().forEach(track => track.stop());
     
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
     return { success: true, dataUrl };
     
   } catch (error: any) {
