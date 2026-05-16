@@ -37,7 +37,7 @@ import { isGoogleSheetsConfigured, getConfigStatus, saveGoogleSheetsUrl, getGoog
 import GoogleSheetsSetup from './components/GoogleSheetsSetup';
 import DriveConnectionTest from './components/DriveConnectionTest';
 import OwnerRegistration from './components/OwnerRegistration';
-import { capturePhoto, captureFrame, VideoRecorder, getCurrentLocation } from './utils/camera';
+import { capturePhoto, captureFrame, startCamera, VideoRecorder, getCurrentLocation } from './utils/camera';
 
 export default function App() {
   // Language & Portal States
@@ -1703,29 +1703,25 @@ export default function App() {
                           {!pumpCaptured && !pumpStream ? (
                             <button
                               type="button"
-                              onClick={async () => {
-                                setCameraError('');
-                                setIsCapturing(true);
-                                try {
-                                  // Open camera for preview
-                                  const stream = await navigator.mediaDevices.getUserMedia({
-                                    video: { facingMode: 'environment', width: { ideal: 1920 } },
-                                    audio: false
-                                  });
-                                  setPumpStream(stream);
-                                  if (pumpPreviewRef.current) {
-                                    pumpPreviewRef.current.srcObject = stream;
-                                    setTimeout(() => {
-                                      if (pumpPreviewRef.current) {
-                                        pumpPreviewRef.current.play().catch(err => console.log('Play error:', err));
-                                      }
-                                    }, 100);
+                            onClick={async () => {
+                                  setCameraError('');
+                                  setIsCapturing(true);
+                                  const result = await startCamera(false);
+                                  if (result.stream) {
+                                    setPumpStream(result.stream);
+                                    if (pumpPreviewRef.current) {
+                                      pumpPreviewRef.current.srcObject = result.stream;
+                                      setTimeout(() => {
+                                        if (pumpPreviewRef.current) {
+                                          pumpPreviewRef.current.play().catch(() => {});
+                                        }
+                                      }, 100);
+                                    }
+                                  } else {
+                                    setCameraError(result.error || 'Failed to open camera');
                                   }
-                                } catch (error: any) {
-                                  setCameraError(error.message || 'Failed to open camera');
-                                }
-                                setIsCapturing(false);
-                              }}
+                                  setIsCapturing(false);
+                                }}
                               className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg px-5 py-3 transition-all shadow-md inline-flex items-center gap-1.5"
                             >
                               <Camera className="h-4 w-4" />
@@ -2137,26 +2133,23 @@ export default function App() {
                           {!odoCaptured && !odoStream ? (
                             <button
                               type="button"
-                              onClick={async () => {
-                                setCameraError('');
-                                try {
-                                  const stream = await navigator.mediaDevices.getUserMedia({
-                                    video: { facingMode: 'environment', width: { ideal: 1920 } },
-                                    audio: false
-                                  });
-                                  setOdoStream(stream);
-                                  if (odoPreviewRef.current) {
-                                    odoPreviewRef.current.srcObject = stream;
-                                    setTimeout(() => {
-                                      if (odoPreviewRef.current) {
-                                        odoPreviewRef.current.play().catch(err => console.log('Play error:', err));
-                                      }
-                                    }, 100);
+                            onClick={async () => {
+                                  setCameraError('');
+                                  const result = await startCamera(false);
+                                  if (result.stream) {
+                                    setOdoStream(result.stream);
+                                    if (odoPreviewRef.current) {
+                                      odoPreviewRef.current.srcObject = result.stream;
+                                      setTimeout(() => {
+                                        if (odoPreviewRef.current) {
+                                          odoPreviewRef.current.play().catch(() => {});
+                                        }
+                                      }, 100);
+                                    }
+                                  } else {
+                                    setCameraError(result.error || 'Failed to open camera');
                                   }
-                                } catch (error: any) {
-                                  setCameraError(error.message || 'Failed to open camera');
-                                }
-                              }}
+                                }}
                               className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg px-5 py-3 transition-all shadow-md inline-flex items-center justify-center gap-1.5"
                             >
                               <Camera className="h-4 w-4" />
